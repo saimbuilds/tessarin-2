@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# tessarin.studio
 
-## Getting Started
+The Tessarin studio website. One immersive page built around a single idea: **the tessera**.
+The red shard in the Tessarin logo tessellates (an upright shard plus an inverted one tile the
+plane), so the whole site is made of those tiles: a wall that spells the headline, a template
+that gets smashed, shapes that become a browser window, a thinking sphere and a portal, and a
+physics pile in the footer.
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # production build (deploys to Vercel as-is)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Edit the words
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All copy lives in **`src/content/site.ts`**: headlines, services, process, contact, the parody
+agency site, and the placeholder projects. Things to fill in before launch:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `site.bookingUrl` — the real Cal.com link (currently `https://cal.com/tessarin`)
+- `site.email` and `site.socials`
+- `work.items` — real project names, types and years (`hue` tints the generated mosaic cover)
+- Check the promises in `process.steps` and `contact.body` ("within a week", "within a day")
+  are ones the team will keep
 
-## Learn More
+## How it's built
 
-To learn more about Next.js, take a look at the following resources:
+| Piece | Where | Notes |
+| --- | --- | --- |
+| Tile field (hero wall, sphere, ring…) | `src/components/gl/TileField.tsx`, `tileMaterial.ts` | One instanced mesh of ~4–7k shard tiles, morphing between formations in the vertex shader. Flips run on a per-tile spring on the CPU. |
+| Tile shape and formations | `src/lib/tiles.ts` | Shard geometry, tessellation, text masks for the wall. |
+| Scroll choreography | `src/lib/choreography.ts` | Maps scroll position to which formation is showing. Sections opt in with `data-scene`. |
+| Sound | `src/lib/audio.ts` | Every sound is synthesised live with the Web Audio API: drone, FM bells, tile clacks, glass shatter, whooshes. No audio files. |
+| Smashed template | `src/components/sections/Pattern.tsx` | Canvas 2D; scroll-scrubbed, so scrolling back reassembles it. |
+| Footer physics | `src/components/gl/FooterPhysics.tsx` | Rapier, lazy-loaded only when the footer is in view. |
+| Logo | `src/lib/logo.ts`, `public/brand/` | Traced from the JPEG. Swap in the designer's vector when it exists. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Stack: Next.js 16, React 19, three.js via React Three Fiber, Rapier, GSAP ScrollTrigger, Lenis,
+Tailwind CSS 4.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Fonts: **Anybody** (Google Fonts, OFL) for display, whose width axis (50–150%) the headlines
+animate; **Switzer** (Fontshare, free for commercial use) for text.
 
-## Deploy on Vercel
+## Accessibility and performance
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `prefers-reduced-motion`: no smooth scroll, tiles snap instead of flip, the smash becomes a fade.
+- Sound is opt-in on entry and can be toggled in the nav. It pauses when the tab is hidden.
+- The WebGL canvas drops its resolution automatically on slow GPUs, and stops drawing while an
+  opaque section covers it.
+- Everything readable is real HTML; the tile wall headline has an `h1` behind it.
